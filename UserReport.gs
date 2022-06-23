@@ -65,7 +65,7 @@ class UserReport {
           title.secondary = "That's 1 less thing to worry about! 👍👏🎉";
         }
         else {
-          title.primary = "Yesterday, you completed these" + this.yesterdaysCompletedTasks.length-1 + " tasks.";
+          title.primary = "Yesterday, you completed these " + (this.yesterdaysCompletedTasks.length-1) + " tasks.";
           title.secondary = "Awesome! Those are " + (this.yesterdaysCompletedTasks.length-1) + " less things to worry about! 👍👏🎉";
         }
         return title;
