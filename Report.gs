@@ -18,7 +18,7 @@ class Report {
       case REPORT_TYPE.TODAYS_TASKS: {
         this.userReports.forEach(function(userReport, userId){
           // console.log("addUserReport userId="+userId + " value="+userReport.toString());
-          if(userId & task.ownerId == userId){
+          if(isUserIdPartOfOwnerId(task.ownerId, userId)){
             userReport.todaysTasks.push(task);
           }
         });
@@ -28,7 +28,7 @@ class Report {
       case REPORT_TYPE.UNSCHEDULED_TASKS: {
         this.userReports.forEach(function(userReport, userId){
           // console.log("addUserReport userId="+userId + " value="+userReport.toString());
-          if(userId & task.ownerId == userId){
+          if(isUserIdPartOfOwnerId(task.ownerId, userId)){
             userReport.unscheduledTasks.push(task);
           }
         });
@@ -38,7 +38,7 @@ class Report {
       case REPORT_TYPE.YESTERDAYS_COMPLETED_TASKS: {
         this.userReports.forEach(function(userReport, userId){
           // console.log("addUserReport userId="+userId + " value="+userReport.toString());
-          if(userId & task.ownerId == userId){
+          if(isUserIdPartOfOwnerId(task.ownerId, userId)){
             userReport.yesterdaysCompletedTasks.push(task);
           }
         });
@@ -48,7 +48,7 @@ class Report {
       case REPORT_TYPE.YESTERDAYS_INCOMPLETE_TASKS: {
         this.userReports.forEach(function(userReport, userId){
           // console.log("addUserReport userId="+userId + " value="+userReport.toString());
-          if(userId & task.ownerId == userId){
+          if(isUserIdPartOfOwnerId(task.ownerId, userId)){
             userReport.yesterdaysIncompleteTasks.push(task);
           }
         });

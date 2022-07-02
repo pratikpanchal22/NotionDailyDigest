@@ -94,3 +94,19 @@ function test_getFormattedDateTime(){
   console.log(getFormattedDateTime(new Date(d), DT_FORMAT.DDD_MMM_D_YYYY));
   console.log("should be empty:"+getFormattedDateTime(new Date("df"), DT_FORMAT.DDD_MMM_D_YYYY));
 }
+
+function isUserIdPartOfOwnerId(ownerId, userId){
+  return isBitSet(ownerId, userId);
+}
+
+function isBitSet(value, bit){
+  return ((value & bit) === bit);
+}
+
+
+
+
+function getFormattedStringForDaysInBetween(d){
+    let pd = new Date(d);
+    let cd = new Date(now());
+}
