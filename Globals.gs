@@ -16,7 +16,8 @@ const TASK_KEY = Object.freeze({
   DEADLINE_START: "deadlinestart",
   CREATED_BY: "createdby",
   AGE: "age",
-  NEXT_STEP: "nextstep"
+  NEXT_STEP: "nextstep",
+  CREATED: "created"
 });
 
 const TASK_VALUE = Object.freeze({

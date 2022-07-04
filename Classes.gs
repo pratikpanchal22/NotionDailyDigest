@@ -85,7 +85,9 @@ class Task {
 
           populateFields(dataRow, richTextDataRow){
             super.populateFields(dataRow, richTextDataRow);
-            this.age = convertNumberOfDaysToAgeString(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.AGE))]);
+
+            let dateDiffObj = new DateDiff(new Date(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.CREATED))]));
+            this.age = dateDiffObj.getDateDiffString();
           }
 
           toString(){
@@ -119,7 +121,9 @@ class Task {
       
       populateFields(dataRow, richTextDataRow){
         super.populateFields(dataRow, richTextDataRow);
-        this.age = convertNumberOfDaysToAgeString(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.AGE))]);
+
+        let dateDiffObj = new DateDiff(new Date(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.CREATED))]));
+        this.age = dateDiffObj.getDateDiffString();
       }
 
       toString(){
