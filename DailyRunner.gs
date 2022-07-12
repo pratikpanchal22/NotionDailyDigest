@@ -1,25 +1,88 @@
-function dailyRunner() {
-  
+function getCoreData(){
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var dataSheet = ss.getSheetByName(DATA_SHEET);
 
   let totalRows = dataSheet.getLastRow();
   let totalColumns = dataSheet.getLastColumn();
 
-  let mappings = {};
-  mappings.tkm = createTaskKeyMap();       //taskKeyMap
-  mappings.tim = createTaskKeyIndexMap();  //taskIndexMap
-  mappings.tum = createTaskUserMap();      //taskUserMap
+  let coreData = {};
+  coreData.raw = dataSheet.getRange(1,1,totalRows, totalColumns).getValues();
+  coreData.richText = dataSheet.getRange(1,1,totalRows, totalColumns).getRichTextValues();
 
+  return coreData;
+}
+
+function updateColumn(colIdx, dataGrid){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var dataSheet = ss.getSheetByName(DATA_SHEET);
+
+  let data = new Array();
+  for(var r=0; r<dataGrid.length; r++){
+    // data[r][0] = dataGrid[r][colIdx];
+    data.push(new Array(dataGrid[r][colIdx]));
+  }
+  
+  dataSheet.getRange(1, colIdx+1, data.length, 1).setValues(data);
+
+  SpreadsheetApp.flush();
+}
+
+function hourlyRunner(){
+  let coreData = getCoreData();
+  let data = coreData.raw;
+  let richTextData = coreData.richText;
+
+  let mapper = new Mapper();
+
+  let calendar = CalendarApp.getCalendarById('nbrd5l2ltdhbcqcetme8eecusg@group.calendar.google.com');
+  let calendarWrapper = new CalendarWrapper(mapper);
+
+  let numberOfEventsCreated = 0;
+
+  for(var r=1; r<data.length; r++){
+    
+    if(data[r][mapper.getIndexFromKey(TASK_KEY.PAGE_ID)].length == 0){
+      break;
+    }
+
+    //console.log(data[r][mapper.getIndexFromKey(TASK_KEY.AUTO_CREATE_GCAL_EVENT)] + "---" + data[r][mapper.getIndexFromKey(TASK_KEY.GCAL_EVENT_LINK)].length);
+
+    if(data[r][mapper.getIndexFromKey(TASK_KEY.AUTO_CREATE_GCAL_EVENT)] !== EVENT_CREATE_PERMISSION_TYPE.EMPTY &&
+       data[r][mapper.getIndexFromKey(TASK_KEY.AUTO_CREATE_GCAL_EVENT)] !== EVENT_CREATE_PERMISSION_TYPE.NO    && 
+       data[r][mapper.getIndexFromKey(TASK_KEY.GCAL_EVENT_LINK)].length === 0  ){
+
+        console.log("Creating event for: " + data[r][mapper.getIndexFromKey(TASK_KEY.TASK_NAME)]);
+        data[r][mapper.getIndexFromKey(TASK_KEY.GCAL_EVENT_LINK)] = calendarWrapper.createEvent(data[r]);
+        ++numberOfEventsCreated;
+    } 
+  }
+
+  console.log("Number of events created = " + numberOfEventsCreated);
+
+  if(numberOfEventsCreated > 0){
+    updateColumn(mapper.getIndexFromKey(TASK_KEY.GCAL_EVENT_LINK), data);
+  }
+}
+
+
+
+function dailyRunner() {
+
+  let coreData = getCoreData();
+  let data = coreData.raw;
+  let richTextData = coreData.richText;
+
+  let mapper = new Mapper();
   let report = initializeReport();         //Report Object
-
-  var data = dataSheet.getRange(1,1,totalRows, totalColumns).getValues();
-  var richTextData = dataSheet.getRange(1,1,totalRows, totalColumns).getRichTextValues();
 
   // console.log(data[0][0]);
   // console.log(data[0][data[0].length-1]);
 
   for(var r=1; r<data.length; r++){
+
+    if(data[r][mapper.getIndexFromKey(TASK_KEY.PAGE_ID)].length == 0){
+      break;
+    }
 
     /*
     if(noOwner){
@@ -57,30 +120,31 @@ function dailyRunner() {
     */
 
     //OwnerlessTasks
-    if(data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.OWNER_ID))].length == 0 || 
-       data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.OWNER_ID))] == 0 ){
+    if(data[r][mapper.getIndexFromKey(TASK_KEY.OWNER_ID)].length == 0 || 
+       data[r][mapper.getIndexFromKey(TASK_KEY.OWNER_ID)] == 0 ){
       
-      let ownerlessTask = new OwnerlessTask(mappings);
+      let ownerlessTask = new OwnerlessTask(mapper);
+      // console.log("r="+r+" "+data[r][mapper.getIndexFromKey(TASK_KEY.CREATED)]);
       ownerlessTask.populateFields(data[r], richTextData[r]);
       report.addReport(REPORT_TYPE.ONWERLESS_TASKS, ownerlessTask);
       // console.log("\n ownerlessTask:::" + ownerlessTask);
     }
     else {
       //UnscheduledTasks
-      if((data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.SCHEDULED))].length === 0 || 
-          data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.SCHEDULED))] === 0) &&
-         data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.STATUS))] != TASK_VALUE.COMPLETED && 
-         data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.STATUS))] != TASK_VALUE.CANCELLED ){
+      if((data[r][mapper.getIndexFromKey(TASK_KEY.SCHEDULED)].length === 0 || 
+          data[r][mapper.getIndexFromKey(TASK_KEY.SCHEDULED)] === 0) &&
+         data[r][mapper.getIndexFromKey(TASK_KEY.STATUS)] != TASK_VALUE.COMPLETED && 
+         data[r][mapper.getIndexFromKey(TASK_KEY.STATUS)] != TASK_VALUE.CANCELLED ){
           
         // console.log("UNSCHEDULED TASK::: task="+data[r][tim.get(tkm.get(TASK_KEY.TASK_NAME))]
         // +"ownerId="+data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))]+"  owners:"+convertOwnerIdToString(data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))],tum));
-        let unscheduledTask = new UnscheduledTask(mappings);
+        let unscheduledTask = new UnscheduledTask(mapper);
         unscheduledTask.populateFields(data[r], richTextData[r]);
         report.addReport(REPORT_TYPE.UNSCHEDULED_TASKS, unscheduledTask);
         // console.log("\n unscheduledTask:::" + unscheduledTask);
       }
       else {
-        let scheduledDate = data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.SCHEDULED))];
+        let scheduledDate = data[r][mapper.getIndexFromKey(TASK_KEY.SCHEDULED)];
         let schDateDelta = getDaysDelta(scheduledDate);
 
         switch(schDateDelta){
@@ -90,7 +154,7 @@ function dailyRunner() {
             //TodaysTask
             // console.log("TODAY'S TASK:::"+ ++tt +" task="+data[r][tim.get(tkm.get(TASK_KEY.TASK_NAME))]
             // +"ownerId="+data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))]+"  owners:"+convertOwnerIdToString(data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))],tum));
-            let todaysTask = new TodayTask(mappings);
+            let todaysTask = new TodayTask(mapper);
             todaysTask.populateFields(data[r], richTextData[r]);
             report.addReport(REPORT_TYPE.TODAYS_TASKS, todaysTask);
             // console.log("\n todaysTask:::" + todaysTask);
@@ -99,18 +163,18 @@ function dailyRunner() {
 
           case -1: {
             //YesterdayCompletedTasks
-            if(data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.STATUS))] === TASK_VALUE.COMPLETED){
+            if(data[r][mapper.getIndexFromKey(TASK_KEY.STATUS)] === TASK_VALUE.COMPLETED){
               // console.log("YESTERDAY'S COMPLETED TASK::: task="+data[r][tim.get(tkm.get(TASK_KEY.TASK_NAME))]
               // +"ownerId="+data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))]+"  owners:"+convertOwnerIdToString(data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))],tum));
-              let yesterdaysCompletedTask = new YesterdaysCompletedTask(mappings);
+              let yesterdaysCompletedTask = new YesterdaysCompletedTask(mapper);
               yesterdaysCompletedTask.populateFields(data[r], richTextData[r]);
               report.addReport(REPORT_TYPE.YESTERDAYS_COMPLETED_TASKS, yesterdaysCompletedTask);
               // console.log("\n yesterdaysCompletedTask:::" + yesterdaysCompletedTask);
             }
             //YesterdayIncompleteTasks
-            else if (data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.STATUS))] != TASK_VALUE.CANCELLED){
+            else if (data[r][mapper.getIndexFromKey(TASK_KEY.STATUS)] != TASK_VALUE.CANCELLED){
               // console.log("YESTERDAY'S INCOMPLETE TASK::: task="+data[r][tim.get(tkm.get(TASK_KEY.TASK_NAME))]+"ownerId="+data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))]+"  owners:"+convertOwnerIdToString(data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))],tum));
-              let yesterdaysIncompleteTask = new YesterdaysIncompleteTask(mappings);
+              let yesterdaysIncompleteTask = new YesterdaysIncompleteTask(mapper);
               yesterdaysIncompleteTask.populateFields(data[r], richTextData[r]);
               report.addReport(REPORT_TYPE.YESTERDAYS_INCOMPLETE_TASKS, yesterdaysIncompleteTask);
               // console.log("\n yesterdaysIncompleteTask:::" + yesterdaysIncompleteTask);
@@ -125,10 +189,10 @@ function dailyRunner() {
           default: {
             //IncompleteTasks
             if(schDateDelta < -1 && 
-                data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.STATUS))] != TASK_VALUE.COMPLETED && 
-                data[r][mappings.tim.get(mappings.tkm.get(TASK_KEY.STATUS))] != TASK_VALUE.CANCELLED ){
+                data[r][mapper.getIndexFromKey(TASK_KEY.STATUS)] != TASK_VALUE.COMPLETED && 
+                data[r][mapper.getIndexFromKey(TASK_KEY.STATUS)] != TASK_VALUE.CANCELLED ){
               // console.log("OTHER INCOMPLETE TASK::: task="+data[r][tim.get(tkm.get(TASK_KEY.TASK_NAME))]+"ownerId="+data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))]+"  owners:"+convertOwnerIdToString(data[r][tim.get(tkm.get(TASK_KEY.OWNER_ID))],tum));
-              let incompleteTask = new IncompleteTask(mappings);
+              let incompleteTask = new IncompleteTask(mapper);
               incompleteTask.populateFields(data[r], richTextData[r]);
               report.addReport(REPORT_TYPE.INCOMPLETE_TASKS, incompleteTask);
               // console.log("\n incompleteTask:::" + incompleteTask);
@@ -151,12 +215,12 @@ function dailyRunner() {
   console.log("Report Extraction: " + report.getCurrentReportAgeString());
 
   let log = report.getLogBundle();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   ss.getSheetByName("Log").getRange(1,1).setValue(log);
-  // SpreadsheetApp.flush();
+  SpreadsheetApp.flush();
 
   //Formatted Report
-  let tcm = createTemplateComponentMap();
-  let formattedReport = new FormattedReport(report, tcm);
+  let formattedReport = new FormattedReport(report, mapper.tcm);
 
 
   report.userReports.forEach(function(userReport, userId){
@@ -165,90 +229,13 @@ function dailyRunner() {
     console.log("Sending email to " +  userReport.name + ", "+ userReport.email + " with subject: " + formattedReport.getEmailSubject());
     emailReports(userReport.email, formattedReport.getEmailSubject(), formattedEmail);
   });
-
-  // let finalReport1 = formattedReport.generateForUserId(1);
-  // // console.log(finalReport1);
-  // ss.getSheetByName("Log").getRange(1,2).setValue(finalReport1);
-  // SpreadsheetApp.flush();
-}
-
-function userReportInitializer(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var configSheet = ss.getSheetByName(CONFIG_SHEET);
-
-  let totalRows = configSheet.getLastRow();
-  let totalColumns = 3;
-
-  var data = configSheet.getRange(2,1,totalRows, totalColumns).getValues();
-
-  var userReports = {};
-  
-  data.forEach(function(row){
-    userReports[row[0]] = new UserReport(row[1], row[2]);
-  });
-
-  // console.log(Object.keys(userReports).length);
-
-  return userReports;
-}
-
-function createTaskKeyIndexMap(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var dataSheet = ss.getSheetByName(DATA_SHEET);
-
-  let totalRows = dataSheet.getLastRow();
-  let totalColumns = dataSheet.getLastColumn();
-
-  var data = dataSheet.getRange(1,1,1, totalColumns).getValues();
-
-  var taskIndexMap = new Map();
-  for(var c=0; c<data[0].length; c++){
-    taskIndexMap.set(data[0][c], c);
-  }
-
-  return taskIndexMap;
-}
-
-function createTaskKeyMap(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var dataSheet = ss.getSheetByName(TASK_KEY_MAPPING_SHEET);
-
-  let totalRows = dataSheet.getLastRow();
-  let totalColumns = dataSheet.getLastColumn();
-
-  var data = dataSheet.getRange(1,1,totalRows, 2).getValues();
-
-  var taskKeyMap = new Map();
-  for(var r=1; r<data.length; r++) if(data[r][0] != ""){
-    taskKeyMap.set(data[r][0], data[r][1]);
-  }
-
-  return taskKeyMap;
-}
-
-function createTaskUserMap(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var dataSheet = ss.getSheetByName(CONFIG_SHEET);
-
-  let totalRows = dataSheet.getLastRow();
-  let totalColumns = dataSheet.getLastColumn();
-
-  var data = dataSheet.getRange(1,1,totalRows, 2).getValues();
-
-  var taskUserMap = new Map();
-  for(var r=1; r<data.length; r++) if(data[r][0].length != 0) {
-    //taskUserMap[data[r][0]] 
-    taskUserMap.set(data[r][0], data[r][1]);
-  }
-
-  return taskUserMap;
 }
 
 function initializeReport(){
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var dataSheet = ss.getSheetByName(CONFIG_SHEET);
 
-  let totalRows = dataSheet.getLastRow();
+  let totalRows = 30; //dataSheet.getLastRow();
   let totalColumns = dataSheet.getLastColumn();
 
   var data = dataSheet.getRange(1,1,totalRows, totalColumns).getValues();
@@ -270,17 +257,4 @@ function initializeReport(){
   // });
 
   return report;
-}
-
-function createTemplateComponentMap(){
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var dataSheet = ss.getSheetByName(TEMPLATE_SHEET);
-
-  let totalRows = dataSheet.getLastRow();
-  let totalColumns = dataSheet.getLastColumn();
-
-  var data = dataSheet.getRange(11,2,totalRows-11+1, 3).getValues();
-
-  let tcm = new TemplateComponentMap(data);
-  return tcm;
 }

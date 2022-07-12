@@ -1,5 +1,8 @@
 const DATA_SHEET = "Shared Tasks (Inbox)";
+
 const CONFIG_SHEET = "Configurations";
+// const CONFIG_SHEET = "Dev_Configurations";
+
 const TASK_KEY_MAPPING_SHEET = "Task Key Mapping";
 const QUOTE_SHEET = "Productivity Quotes";
 const TEMPLATE_SHEET = "EmailTemplate";
@@ -7,7 +10,9 @@ const TEMPLATE_SHEET = "EmailTemplate";
 //
 const TASK_KEY = Object.freeze({
   SCHEDULED: "scheduled",
+  SCHEDULED_END: "scheduledend",
   TASK_NAME: "taskname",
+  SUMMARY: 'summary',
   OWNER_ID: "ownerid",
   STATUS: "status",
   PAGE_ID: "pageid",
@@ -17,7 +22,9 @@ const TASK_KEY = Object.freeze({
   CREATED_BY: "createdby",
   AGE: "age",
   NEXT_STEP: "nextstep",
-  CREATED: "created"
+  CREATED: "created",
+  AUTO_CREATE_GCAL_EVENT: 'autocreategooglecalevent',
+  GCAL_EVENT_LINK: 'googlecaleventlink'
 });
 
 const TASK_VALUE = Object.freeze({

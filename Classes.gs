@@ -1,6 +1,6 @@
 class Task {
-  constructor(mapping){
-    this.mapping = mapping;
+  constructor(mapper){
+    this.mapper = mapper;
 
     this.taskName = "Task";
     this.taskUrl = "";
@@ -10,11 +10,11 @@ class Task {
   }
 
   populateFields(dataRow, richTextDataRow){
-    this.taskName = String(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.TASK_NAME))]);
-    this.taskUrl = String(richTextDataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.PAGE_ID))].getLinkUrl());
-    this.projectName = String(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.PROJECT_NAME))]);
-    this.projectUrl = String(richTextDataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.PROJECT))].getLinkUrl());
-    this.ownerId = dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.OWNER_ID))];
+    this.taskName = String(dataRow[this.mapper.getIndexFromKey(TASK_KEY.TASK_NAME)]);
+    this.taskUrl = String(richTextDataRow[this.mapper.getIndexFromKey(TASK_KEY.PAGE_ID)].getLinkUrl());
+    this.projectName = String(dataRow[this.mapper.getIndexFromKey(TASK_KEY.PROJECT_NAME)]);
+    this.projectUrl = String(richTextDataRow[this.mapper.getIndexFromKey(TASK_KEY.PROJECT)].getLinkUrl());
+    this.ownerId = dataRow[this.mapper.getIndexFromKey(TASK_KEY.OWNER_ID)];
   }
 
   toString(){
@@ -27,14 +27,14 @@ class Task {
 }
 
     class TaskWithDeadline extends Task {
-      constructor(mapping){
-        super(mapping);
+      constructor(mapper){
+        super(mapper);
         this.deadline = "Deadline";
       }
 
       populateFields(dataRow, richTextDataRow){
         super.populateFields(dataRow, richTextDataRow);
-        this.deadline = String(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.DEADLINE_START))]);
+        this.deadline = String(dataRow[this.mapper.getIndexFromKey(TASK_KEY.DEADLINE_START)]);
       }
 
       toString(){
@@ -44,14 +44,14 @@ class Task {
     }
 
         class IncompleteTask extends TaskWithDeadline {
-          constructor(mapping){
-            super(mapping);
+          constructor(mapper){
+            super(mapper);
             this.owner = "Owner(s)";
           }
 
           populateFields(dataRow, richTextDataRow){
             super.populateFields(dataRow, richTextDataRow);
-            this.owner = convertOwnerIdToString(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.OWNER_ID))],this.mapping.tum);
+            this.owner = convertOwnerIdToString(dataRow[this.mapper.getIndexFromKey(TASK_KEY.OWNER_ID)], this.mapper.tum);
           }
 
           toString(){
@@ -61,14 +61,14 @@ class Task {
         }
 
         class YesterdaysIncompleteTask extends TaskWithDeadline {
-          constructor(mapping){
-            super(mapping);
+          constructor(mapper){
+            super(mapper);
             this.status = "Status";
           }
 
           populateFields(dataRow, richTextDataRow){
             super.populateFields(dataRow, richTextDataRow);
-            this.status = String(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.STATUS))]);
+            this.status = String(dataRow[this.mapper.getIndexFromKey(TASK_KEY.STATUS)]);
           }
 
           toString(){
@@ -78,15 +78,15 @@ class Task {
         }
 
         class UnscheduledTask extends TaskWithDeadline {
-          constructor(mapping){
-            super(mapping);
+          constructor(mapper){
+            super(mapper);
             this.age = "Age";
           }
 
           populateFields(dataRow, richTextDataRow){
             super.populateFields(dataRow, richTextDataRow);
 
-            let dateDiffObj = new DateDiff(new Date(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.CREATED))]));
+            let dateDiffObj = new DateDiff(new Date(dataRow[this.mapper.getIndexFromKey(TASK_KEY.CREATED)]));
             this.age = dateDiffObj.getDateDiffString();
           }
 
@@ -97,14 +97,14 @@ class Task {
         }
 
             class OwnerlessTask extends UnscheduledTask {
-              constructor(mapping){
-                super(mapping);
+              constructor(mapper){
+                super(mapper);
                 this.createdBy = "Created By";
               }
 
               populateFields(dataRow, richTextDataRow){
                 super.populateFields(dataRow, richTextDataRow);
-                this.createdBy = String(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.CREATED_BY))]);
+                this.createdBy = String(dataRow[this.mapper.getIndexFromKey(TASK_KEY.CREATED_BY)]);
               }
 
               toString(){
@@ -114,15 +114,15 @@ class Task {
             }
 
     class YesterdaysCompletedTask extends Task {
-      constructor(mapping){
-        super(mapping);
+      constructor(mapper){
+        super(mapper);
         this.age = "Age";
       }
       
       populateFields(dataRow, richTextDataRow){
         super.populateFields(dataRow, richTextDataRow);
 
-        let dateDiffObj = new DateDiff(new Date(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.CREATED))]));
+        let dateDiffObj = new DateDiff(new Date(dataRow[this.mapper.getIndexFromKey(TASK_KEY.CREATED)]));
         this.age = dateDiffObj.getDateDiffString();
       }
 
@@ -133,16 +133,16 @@ class Task {
     }
 
         class TodayTask extends YesterdaysCompletedTask {
-          constructor(mapping){
-            super(mapping);
+          constructor(mapper){
+            super(mapper);
             this.owner = "Owner";
             this.nextStep = "Next Step";
           }
 
           populateFields(dataRow, richTextDataRow){
             super.populateFields(dataRow, richTextDataRow);
-            this.owner = convertOwnerIdToString(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.OWNER_ID))],this.mapping.tum);
-            this.nextStep = String(dataRow[this.mapping.tim.get(this.mapping.tkm.get(TASK_KEY.NEXT_STEP))]);
+            this.owner = convertOwnerIdToString(dataRow[ this.mapper.getIndexFromKey(TASK_KEY.OWNER_ID)],this.mapper.tum);
+            this.nextStep = String(dataRow[this.mapper.getIndexFromKey(TASK_KEY.NEXT_STEP)]);
           }
 
           toString(){
@@ -521,43 +521,6 @@ class FormattedReport{
     return html.join('\n');
   }
 
-}
-
-
-
-class TemplateComponentMap {
-  
-  constructor(data){
-    this.data = data;
-    let tcm = new Map();
-    this.data.forEach(function(row){
-      let key = row[0];
-      let value = new Array();
-      value.push(row[1]);
-      value.push(row[2]);
-
-      tcm.set(key, value);
-    });
-
-    this.tcm = tcm;
-  }
-
-  getHtml(component, fragment){
-
-    if(!fragment){
-      fragment = HTML_COMPONENT_FRAGMENT.OPEN;
-    }
-
-    if(this.tcm.has(component)){
-      if(fragment === HTML_COMPONENT_FRAGMENT.OPEN){
-        return this.tcm.get(component)[0];
-      }
-      else if(fragment === HTML_COMPONENT_FRAGMENT.CLOSE){
-        return this.tcm.get(component)[1];
-      }
-    }
-    return "";
-  }
 }
 
 function testTableCreation(){

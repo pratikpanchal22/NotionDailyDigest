@@ -20,6 +20,28 @@ function test_OwnerIdToString(){
    }
 }
 
+function convertOwnerIdToEmailString(ownerId, taskUserEmailMap) {
+  
+  ownerId = Number(ownerId);
+  var emailString = "";
+
+  for (const [key, value] of taskUserEmailMap.entries()) {
+    if((ownerId & key) == key){
+      emailString += emailString.length == 0 ? "" : ", ";
+      emailString += value;
+    }
+  }
+
+  return emailString;
+}
+
+function test_OwnerIdToEmailString(){
+   let mapper = new Mapper();
+   for(var i = 0; i<16; i++){
+     console.log("id=" + i + " value=" + convertOwnerIdToString(i,mapper.tem));
+   }
+}
+
 function getFirstSubStringBeforeTheFirstSpace(s){
   return s.split(' ')[0];
 }
@@ -49,6 +71,10 @@ function test_getDaysDelta(){
 
 function convertNumberOfDaysToAgeString(days){
   return days;
+}
+
+function timeComponentsAreAllZeroes(dt){
+  return (dt.getHours() === 0 && dt.getMinutes() === 0 && dt.getSeconds() === 0 && dt.getMilliseconds() === 0);
 }
 
 function getFormattedDateTime(d, format){
@@ -311,6 +337,41 @@ function test_dateDiff() {
 
 function isValidDate(d) {
   return d instanceof Date && !isNaN(d);
+}
+
+function test_isValidDate(){
+  let d1 = "";
+  console.log("d1="+d1 + "  isValidDate? "+ isValidDate(d1));
+
+  d1 = "Hello";
+  console.log("d1="+d1 + "  isValidDate? "+ isValidDate(d1));
+
+  d1 = "Hello";
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = "January";
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = "January 12";
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = 12;
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = 2020;
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = '12';
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = "January 12, 2008";
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+  
+  d1 ='12:23 PM';
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
+
+  d1 = 'January 12, 2008, 12:23 AM';
+  console.log("d1="+d1.toString() + "  isValidDate? "+ isValidDate(new Date(d1)));
 }
 
 function getNumberOfDaysForMonth(month){
